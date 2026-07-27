@@ -4,6 +4,8 @@ import shutil
 
 from app.services.parser import extract_pdf_text, extract_docx_text
 
+from app.services.llm import analyze_resume
+
 router = APIRouter()
 
 UPLOAD_DIR = "uploads"
@@ -29,8 +31,10 @@ async def upload_resume(file: UploadFile = File(...)):
     else:
         return {"error": "Unsupported file type"}
 
+    resume_data = analyze_resume(resume_text)
+
     return {
         "message": "Resume uploaded successfully",
         "filename": file.filename,
-        "resume_text": resume_text
+        "resume_data": resume_data
     }

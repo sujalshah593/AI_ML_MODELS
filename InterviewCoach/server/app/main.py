@@ -23,3 +23,7 @@ def root():
     return {
         "message": "Interview Coach API is running"
     }
+
+from app.config import GEMINI_API_KEY
+
+print(GEMINI_API_KEY)
