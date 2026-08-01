@@ -83,6 +83,15 @@ def submit_answer(session_id, answer):
             })
 
     if current_index >= len(all_questions):
+
+        sessions_collection.update_one(
+            {"_id": ObjectId(session_id)},
+            {
+                "$set": {
+                    "status": "completed"
+                }
+            }
+        )
         return {
             "completed": True
         }
@@ -94,17 +103,23 @@ def submit_answer(session_id, answer):
         session["job_data"]
     )
 
+    next_index = current_index + 1
+    status = "ongoing"
+    if next_index >= len(all_questions):
+        status = "completed"
+
     sessions_collection.update_one(
         {"_id": ObjectId(session_id)},
         {
             "$push": {
                 "answers": answer,
                 "scores": evaluation["score"],
-                "feedbacks": evaluation["feedback"]
+                "feedbacks": evaluation
             },
             "$set": {
-                "current_question": current_index + 1
-            }
+                "current_question": current_index + 1,
+                "status": status
+            },
         }
     )
 
@@ -112,4 +127,121 @@ def submit_answer(session_id, answer):
         "question": current_question["question"],
         "evaluation": evaluation,
         "next_question": current_index + 2
+    }
+
+def get_interview_report(seesion_id):
+
+    session = get_session(seesion_id)
+
+    if not session:
+        return None
+
+    scores = session.get("scores", [])
+    feedbacks = session.get("feedbacks", [])
+
+    if len(scores) == 0:
+        average_score = 0
+    else:
+        average_score = round(sum(scores) / len(scores), 2)
+
+    strengths = []
+    weaknesses = []
+
+    for feedback in feedbacks:
+        strengths.extend(feedback.get("strengths", []))
+        weaknesses.extend(feedback.get("weaknesses", []))
+
+    report = {
+         "overall_score": average_score,
+        "questions_answered": len(scores),
+        "total_questions": sum(
+            len(session["questions"][category])
+            for category in ["technical", "behavioral", "hr", "coding"]
+        ),
+        "strengths": list(set(strengths)),
+        "weaknesses": list(set(weaknesses)),
+        "completed": session["status"] == "completed"
+    }
+
+    if average_score >= 9:
+        report["recommendation"] = "Excellent performance. You are interview ready."
+    elif average_score >= 7:
+        report["recommendation"] = "Good performance. PRactice a little more."
+    elif average_score >= 5:
+        report["recommendation"] = "Average performance. Consider more preparation."
+    else:
+        report["recommendation"] = "Poor performance. Significant improvement needed."
+
+    return report
+
+def get_interview_history():
+    
+    sessions = sessions_collection.find()
+
+    history = []
+
+    for session in sessions:
+
+        scores = session.get("scores", [])
+
+        average_score = 0
+
+        if scores:
+            average_score = round(sum(scores) / len(scores), 2)
+
+        history.append({
+            "session_id": str(session["_id"]),
+            "candidate": session["resume_data"].get("name"),
+            "role": session["job_data"].get("role"),
+            "questions_answered": len(scores),
+            "overall_score": average_score,
+            "status": session["status"],
+            "created_at": session["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+    return history
+
+def get_session_details(session_id):
+    session = get_session(session_id)
+
+    if not session:
+        return None
+
+    session["_id"] = str(session["_id"])
+
+    return session
+
+def get_dashboard_stats():
+    sessions = list(sessions_collection.find())
+
+    total_interviews = len(sessions)
+
+    completed = 0
+    ongoing = 0
+
+    all_scores = []
+
+    for session in sessions:
+        if session["status"] == "completed":
+            completed += 1
+        else:
+            ongoing += 1
+
+        all_scores.extend(session.get("scores", []))
+    average_score = 0
+    highest_score = 0
+    lowest_score = 0
+
+    if all_scores:
+        average_score = round(sum(all_scores) / len(all_scores), 2)
+        highest_score = max(all_scores)
+        lowest_score = min(all_scores)
+
+    return {
+        "total_interviews": total_interviews,
+        "completed_interviews": completed,
+        "ongoing_interviews": ongoing,
+        "average_score": average_score,
+        "highest_score": highest_score,
+        "lowest_score": lowest_score
     }

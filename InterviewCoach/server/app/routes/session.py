@@ -5,7 +5,11 @@ from app.services.interview_generator import generate_interview_questions
 from app.services.session_manager import (
     create_session,
     get_current_question,
-    submit_answer
+    submit_answer,
+    get_interview_report,
+    get_interview_history,
+    get_session_details,
+    get_dashboard_stats
 )
 
 router = APIRouter()
@@ -71,3 +75,42 @@ async def answer_question(
         }
 
     return result
+
+@router.get("/session/{session_id}/report")
+async def interview_report(session_id: str):
+    report = get_interview_report(session_id)
+
+    if report is None:
+        return {
+            "message": "Session not found"
+        }
+
+    return report
+
+@router.get("/history")
+async def interview_history():
+    history = get_interview_history()
+
+    return {
+        "total_interviews": len(history),
+        "history": history
+    }
+
+@router.get("/session/{session_id}")
+async def session_details(session_id: str):
+
+    session = get_session_details(session_id)
+
+    if session is None:
+        return {
+            "message": "Session not found"
+        }
+
+    return session
+
+
+@router.get("/dashboard")
+async def dashboard_stats():
+    stats = get_dashboard_stats()
+
+    return stats

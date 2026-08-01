@@ -9,3 +9,4 @@ client = MongoClient(os.getenv("MONGODB_URI"))
 db = client["interview_coach"]
 
 sessions_collection = db["sessions"]
+users_collection = db["users"]
