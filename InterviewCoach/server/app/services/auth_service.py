@@ -1,5 +1,9 @@
 from app.utils.database import users_collection
-from app.auth.hashing import hash_password
+from app.auth.hashing import (
+    hash_password,
+    verify_password
+)
+from app.auth.jwt_handler import create_access_token
 
 def register_user(user):
 
@@ -19,3 +23,29 @@ def register_user(user):
     users_collection.insert_one(document)
 
     return document
+
+def login_user(user):
+    existing = users_collection.find_one(
+        {
+            "email": user.email
+        }
+    )
+
+    if existing is None:
+        return None
+
+    if not verify_password(
+        user.password,
+        existing["password"]
+    ):
+        return None
+    token = create_access_token(
+        {
+            "email": existing["email"]
+        }
+    )
+
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }

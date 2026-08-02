@@ -6,6 +6,7 @@ from app.routes.match import router as match_router
 from app.routes.interview import router as interview_router
 from app.routes.evaluate import router as evaluate_router
 from app.routes.session import router as session_router
+from app.routes.auth import router as auth_router
 
 app = FastAPI(
     title="Interview Coach API",
@@ -26,6 +27,7 @@ app.include_router(match_router, prefix="/api")
 app.include_router(interview_router, prefix="/api")
 app.include_router(evaluate_router, prefix="/api")
 app.include_router(session_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
 
 @app.get("/")
 def root():
