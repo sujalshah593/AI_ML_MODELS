@@ -41,7 +41,7 @@ def login_user(user):
         return None
     token = create_access_token(
         {
-            "email": existing["email"]
+            "sub": existing["email"]
         }
     )
 
@@ -49,3 +49,10 @@ def login_user(user):
         "access_token": token,
         "token_type": "bearer"
     }
+
+def get_user(email):
+    return users_collection.find_one(
+        {
+            "email": email
+        }
+    )

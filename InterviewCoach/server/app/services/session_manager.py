@@ -4,9 +4,11 @@ from app.utils.database import sessions_collection
 from app.services.evaluator import evaluate_answer
 
 
-def create_session(resume_data, job_data, questions):
+
+def create_session(user_id, resume_data, job_data, questions):
 
     session = {
+        "user_id": user_id,
         "resume_data": resume_data,
         "job_data": job_data,
         "questions": questions,
@@ -129,9 +131,9 @@ def submit_answer(session_id, answer):
         "next_question": current_index + 2
     }
 
-def get_interview_report(seesion_id):
+def get_interview_report(session_id):
 
-    session = get_session(seesion_id)
+    session = get_session(session_id)
 
     if not session:
         return None
@@ -174,9 +176,9 @@ def get_interview_report(seesion_id):
 
     return report
 
-def get_interview_history():
+def get_interview_history(user_id):
     
-    sessions = sessions_collection.find()
+    sessions = sessions_collection.find({"user_id": user_id})
 
     history = []
 
@@ -211,8 +213,8 @@ def get_session_details(session_id):
 
     return session
 
-def get_dashboard_stats():
-    sessions = list(sessions_collection.find())
+def get_dashboard_stats(user_id):
+    sessions = list(sessions_collection.find({"user_id": user_id}))
 
     total_interviews = len(sessions)
 

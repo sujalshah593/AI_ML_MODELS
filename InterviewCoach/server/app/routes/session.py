@@ -1,6 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-
+from app.auth.dependencies import get_current_user
 from app.services.interview_generator import generate_interview_questions
 from app.services.session_manager import (
     create_session,
@@ -25,7 +25,10 @@ class AnswerRequest(BaseModel):
 
 
 @router.post("/create-session")
-async def create_interview(request: SessionRequest):
+async def create_interview(
+    request: SessionRequest,
+    current_user=Depends(get_current_user)
+):
 
     questions = generate_interview_questions(
         request.resume_data,
@@ -33,6 +36,7 @@ async def create_interview(request: SessionRequest):
     )
 
     session_id = create_session(
+        current_user["sub"],
         request.resume_data,
         request.job_data,
         questions
@@ -88,8 +92,10 @@ async def interview_report(session_id: str):
     return report
 
 @router.get("/history")
-async def interview_history():
-    history = get_interview_history()
+async def interview_history(
+    current_user=Depends(get_current_user)
+):
+    history = get_interview_history(current_user["sub"])
 
     return {
         "total_interviews": len(history),
@@ -110,7 +116,9 @@ async def session_details(session_id: str):
 
 
 @router.get("/dashboard")
-async def dashboard_stats():
-    stats = get_dashboard_stats()
+async def dashboard_stats(
+    current_user=Depends(get_current_user)
+):
+    stats = get_dashboard_stats(current_user["sub"])
 
     return stats
