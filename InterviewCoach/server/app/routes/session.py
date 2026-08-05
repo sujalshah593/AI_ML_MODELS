@@ -11,6 +11,8 @@ from app.services.session_manager import (
     get_session_details,
     get_dashboard_stats
 )
+from fastapi.responses import FileResponse
+from app.services.pdf_generator import generate_pdf
 
 router = APIRouter()
 
@@ -122,3 +124,19 @@ async def dashboard_stats(
     stats = get_dashboard_stats(current_user["sub"])
 
     return stats
+
+@router.get("/session/{session_id}/pdf")
+async def download_pdf(session_id: str):
+
+    pdf = generate_pdf(session_id)
+
+    if pdf is None:
+        return {
+            "message": "Session not found"
+        }
+
+    return FileResponse(
+        path=pdf,
+        filename="Interview_Report.pdf",
+        media_type="application/pdf"
+    )

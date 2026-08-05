@@ -153,8 +153,28 @@ def get_interview_report(session_id):
         strengths.extend(feedback.get("strengths", []))
         weaknesses.extend(feedback.get("weaknesses", []))
 
+    all_questions = []
+    for category in ["technical", "behavioral", "hr", "coding"]:
+        for question in session["questions"].get(category, []):
+            all_questions.append(question)
+            
+    qna = []
+    answers = session.get("answers", [])
+    for i in range(len(answers)):
+        qna.append({
+            "question": {
+                "questionText": all_questions[i] if i < len(all_questions) else ""
+            },
+            "answer": {
+                "answerText": answers[i],
+                "aiScore": scores[i] * 10,
+                "aiFeedback": feedbacks[i].get("feedback", "")
+            },
+            "idealAnswer": feedbacks[i].get("ideal_answer", "")
+        })
+
     report = {
-         "overall_score": average_score,
+         "overall_score": int(average_score * 10),
         "questions_answered": len(scores),
         "total_questions": sum(
             len(session["questions"][category])
@@ -162,7 +182,8 @@ def get_interview_report(session_id):
         ),
         "strengths": list(set(strengths)),
         "weaknesses": list(set(weaknesses)),
-        "completed": session["status"] == "completed"
+        "completed": session["status"] == "completed",
+        "qna": qna
     }
 
     if average_score >= 9:
